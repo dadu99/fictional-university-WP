@@ -30,30 +30,7 @@ class RSS_Dropin extends Dropin {
 
 		// Add settings with priority 11 so it' added after the main Simple History settings.
 		add_action( 'admin_menu', array( $this, 'add_settings' ), 11 );
-
-		// Output CSS in admin header for this page.
-		add_action( 'admin_print_styles-settings_page_' . $this->simple_history::SETTINGS_MENU_SLUG, array( $this, 'admin_print_styles' ) );
 	}
-
-	/**
-	 * Output CSS in admin header for this page.
-	 */
-	public function admin_print_styles() {
-		if ( $this->is_rss_enabled() === false ) {
-			return;
-		}
-
-		?>
-		<style>
-			.simple_history_rss_feed_query_parameters a::after {
-				/* External icon on link */
-				content: "\f504";
-				font-family: dashicons;
-			}
-		</style>
-		<?php
-	}
-
 
 	/**
 	 * Add settings for the RSS feed.
@@ -92,7 +69,7 @@ class RSS_Dropin extends Dropin {
 
 		add_settings_section(
 			$settings_section_rss_id,
-			$rss_section_title,
+			Helpers::get_settings_section_title_output( $rss_section_title, 'rss_feed' ),
 			array( $this, 'settings_section_output' ),
 			Simple_History::SETTINGS_MENU_SLUG // same slug as for options menu page
 		);
@@ -100,7 +77,7 @@ class RSS_Dropin extends Dropin {
 		// Enable/Disable RSS feed.
 		add_settings_field(
 			'simple_history_enable_rss_feed',
-			__( 'Enable', 'simple-history' ),
+			Helpers::get_settings_field_title_output( __( 'Enable', 'simple-history' ), 'toggle-on' ),
 			array( $this, 'settings_field_rss_enable' ),
 			Simple_History::SETTINGS_MENU_SLUG,
 			$settings_section_rss_id
@@ -111,7 +88,7 @@ class RSS_Dropin extends Dropin {
 			// RSS address.
 			add_settings_field(
 				'simple_history_rss_feed',
-				__( 'Address', 'simple-history' ),
+				Helpers::get_settings_field_title_output( __( 'Address', 'simple-history' ), 'link' ),
 				array( $this, 'settings_field_rss' ),
 				Simple_History::SETTINGS_MENU_SLUG,
 				$settings_section_rss_id
@@ -120,7 +97,7 @@ class RSS_Dropin extends Dropin {
 			// Link button to regenerate RSS secret.
 			add_settings_field(
 				'simple_history_rss_feed_regenerate_secret',
-				__( 'Regenerate', 'simple-history' ),
+				Helpers::get_settings_field_title_output( __( 'Regenerate', 'simple-history' ), 'autorenew' ),
 				array( $this, 'settings_field_rss_regenerate' ),
 				Simple_History::SETTINGS_MENU_SLUG,
 				$settings_section_rss_id
@@ -489,13 +466,14 @@ class RSS_Dropin extends Dropin {
 		echo wp_kses(
 			sprintf(
 				/* translators: %s is a link to the documentation */
-				__( 'Query parameters can be used to control what to include in the feed. <a href="%1$s" target="_blank">View documentation</a>.', 'simple-history' ),
+				__( 'Query parameters can be used to control what to include in the feed. <a href="%1$s" class="sh-ExternalLink" target="_blank">View documentation</a>.', 'simple-history' ),
 				'https://simple-history.com/docs/feeds/?utm_source=wpadmin'
 			),
 			[
 				'a' => [
 					'href' => [],
 					'target' => [],
+					'class' => [],
 				],
 			]
 		);

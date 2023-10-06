@@ -8,6 +8,9 @@ use Simple_History\Simple_History;
 use Simple_History\Log_Levels;
 use Simple_History\Log_Initiators;
 use Simple_History\Helpers;
+use Simple_History\Event_Details\Event_Details_Container;
+use Simple_History\Event_Details\Event_Details_Container_Interface;
+use Simple_History\Event_Details\Event_Details_Group;
 
 /**
  * Abstract base class for loggers.
@@ -118,7 +121,7 @@ abstract class Logger {
 	/**
 	 * Get array with information about this logger.
 	 *
-	 * @return array<mixed> Array with keys 'name', 'description', 'messages', and so on.
+	 * @return array<string,mixed> Array with keys 'name', 'description', 'messages', and so on.
 	 *               See existing loggers for examples.
 	 */
 	abstract public function get_info();
@@ -147,6 +150,10 @@ abstract class Logger {
 	}
 
 	/**
+	 * Returns the header initiator output for a row.
+	 * Example return value is similar to:
+	 * "You" or "par • par.thernstrom@gmail.com"
+	 *
 	 * @param object $row
 	 * @return string HTML
 	 */
@@ -173,8 +180,7 @@ abstract class Logger {
 				$user = get_user_by( 'id', $user_id );
 				if ( $user_id > 0 && ( $user ) ) {
 					// Sender is user and user still exists.
-					$is_current_user =
-						get_current_user_id() == $user_id;
+					$is_current_user = get_current_user_id() == $user_id;
 
 					// get user role, as done in user-edit.php
 					$wp_roles = $GLOBALS['wp_roles'];
@@ -475,6 +481,7 @@ abstract class Logger {
 		if ( ! $logger_name_via ) {
 			return;
 		}
+
 		$via_html = "<span class='SimpleHistoryLogitem__inlineDivided SimpleHistoryLogitem__via'>";
 		$via_html .= $logger_name_via;
 		$via_html .= '</span>';
@@ -578,12 +585,13 @@ abstract class Logger {
 	}
 
 	/**
-	 * Returns header output for a log row.
+	 * Returns header output for a log row,
+	 * by concatenating the output from the other header methods.
 	 *
 	 * Format should be common for all log rows and should be like:
-	 * Username (user role) · Date · IP Address · Via plugin abc
+	 * Username (user role) • Date • IP Address • Via plugin abc
 	 * I.e.:
-	 * Initiator * Date/time * IP Address * Via logger
+	 * Initiator • Date/time • IP Address • Via logger
 	 *
 	 * @param object $row Row data
 	 * @return string HTML
@@ -759,7 +767,7 @@ abstract class Logger {
 	 * thumbnail of that image can bo outputted here
 	 *
 	 * @param object $row
-	 * @return string HTML-formatted output
+	 * @return string|Event_Details_Container_Interface|Event_Details_Group HTML-formatted output or Event_Details_Container (stringable object).
 	 */
 	public function get_log_row_details_output( $row ) {
 		$html = '';
@@ -1062,7 +1070,7 @@ abstract class Logger {
 
 		/**
 		 * Filter that makes it possible to shortcut the logging of a message.
-		 * Return bool false to cancel logging .
+		 * Return bool false to cancel logging.
 		 *
 		 * @since 2.3.1
 		 *
@@ -1200,6 +1208,61 @@ abstract class Logger {
 		 */
 		$data = apply_filters( 'simple_history/log_insert_data', $data );
 
+		if ( ! is_array( $context ) ) {
+			$context = array();
+		}
+
+		$context = $this->append_user_context( $context );
+		$context = $this->append_remote_addr_to_context( $context );
+
+		/**
+		 * Filters the context to store for this event/row
+		 *
+		 * @example Skip adding things to the context table during logging.
+		 * Useful if you don't want to add cool and possible super useful info to your logged events.
+		 * Also nice to have if you want to make sure your database does not grow.
+		 *
+		 * ```php
+		 *  add_filter(
+		 *      'simple_history/log_insert_context',
+		 *      function ( $context, $data ) {
+		 *          unset( $context['_user_id'] );
+		 *          unset( $context['_user_login'] );
+		 *          unset( $context['_user_email'] );
+		 *          unset( $context['server_http_user_agent'] );
+		 *
+		 *          return $context;
+		 *      },
+		 *      10,
+		 *      2
+		 *  );
+		 * ```
+		 *
+		 * @since 2.0.29
+		 *
+		 * @param array $context Array with all context data to store. Modify and return this.
+		 * @param array $data Array with data used for parent row.
+		 * @param Logger $instance Reference to this logger instance.
+		 */
+		$context = apply_filters(
+			'simple_history/log_insert_context',
+			$context,
+			$data,
+			$this
+		);
+
+		/**
+		 * Filter that lets user modify both data and context before logging.
+		 *
+		 * @param array $arr_data_and_context Array with numerical keys [0] = data and [1] = context.
+		 * @param Logger $instance Reference to this logger instance.
+		 */
+		[$data, $context] = apply_filters(
+			'simple_history/log_insert_data_and_context',
+			array( $data, $context ),
+			$this
+		);
+
 		// Insert data into db.
 		$result = $wpdb->insert( $this->db_table, $data );
 
@@ -1208,49 +1271,6 @@ abstract class Logger {
 			$history_inserted_id = null;
 		} else {
 			$history_inserted_id = $wpdb->insert_id;
-
-			if ( ! is_array( $context ) ) {
-				$context = array();
-			}
-
-			$context = $this->append_user_context( $context );
-			$context = $this->append_remote_addr_to_context( $context );
-
-			/**
-			 * Filters the context to store for this event/row
-			 *
-			 * @example Skip adding things to the context table during logging.
-			 * Useful if you don't want to add cool and possible super useful info to your logged events.
-			 * Also nice to have if you want to make sure your database does not grow.
-			 *
-			 * ```php
-			 *  add_filter(
-			 *      'simple_history/log_insert_context',
-			 *      function ( $context, $data ) {
-			 *          unset( $context['_user_id'] );
-			 *          unset( $context['_user_login'] );
-			 *          unset( $context['_user_email'] );
-			 *          unset( $context['server_http_user_agent'] );
-			 *
-			 *          return $context;
-			 *      },
-			 *      10,
-			 *      2
-			 *  );
-			 * ```
-			 *
-			 * @since 2.0.29
-			 *
-			 * @param array $context Array with all context data to store. Modify and return this.
-			 * @param array $data Array with data used for parent row.
-			 * @param Logger $instance Reference to this logger instance.
-			 */
-			$context = apply_filters(
-				'simple_history/log_insert_context',
-				$context,
-				$data,
-				$this
-			);
 
 			// Insert all context values into db.
 			$this->append_context( $history_inserted_id, $context );
@@ -1583,5 +1603,44 @@ abstract class Logger {
 		}
 
 		return array( $data, $context );
+	}
+
+	/**
+	 *  Magic getter for "_slug".
+	 *  Used for backwards compatibility.
+	 *
+	 * @param string $name Name of property to get.
+	 */
+	public function __get( $name ) {
+		if ( 'slug' === $name ) {
+			_deprecated_function( __METHOD__, '4.5.1', 'get_slug()' );
+			return $this->get_slug();
+		}
+	}
+
+	/**
+	 * Check if logger is enabled or disabled.
+	 * If a logger is missing the "enabled_by_default" they are considered enabled by default.
+	 *
+	 * @return bool True if enabled, false if disabled.
+	 */
+	public function is_enabled() {
+		/** @var bool $is_enabled_by_default */
+		$is_enabled_by_default = $this->get_info_value_by_key( 'enabled_by_default' ) ?? true;
+
+		/**
+		 * Filter the default enabled state of a logger.
+		 *
+		 * @param bool $is_enabled_by_default
+		 * @param string $slug
+		 * @return bool
+		 */
+		$is_enabled = apply_filters(
+			'simple_history/logger/enabled',
+			$is_enabled_by_default,
+			$this->get_slug()
+		);
+
+		return $is_enabled;
 	}
 }

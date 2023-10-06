@@ -3,12 +3,7 @@
 namespace Simple_History\Event_Details;
 
 class Event_Details_Item_Table_Row_Formatter extends Event_Details_Item_Formatter {
-	public function get_html_output() {
-		// Skip output of items with empty values.
-		if ( is_null( $this->item->new_value ) ) {
-			return '';
-		}
-
+	public function to_html() {
 		return sprintf(
 			'
                 <tr>
@@ -21,9 +16,9 @@ class Event_Details_Item_Table_Row_Formatter extends Event_Details_Item_Formatte
 		);
 	}
 
-	public function get_json_output() {
+	public function to_json() {
 		// Use same formatter as inline items.
 		$item_formatter = new Event_Details_Item_Default_Formatter( $this->item );
-		return $item_formatter->get_json_output();
+		return $item_formatter->to_json();
 	}
 }

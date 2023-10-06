@@ -15,7 +15,6 @@ abstract class Event_Details_Item_Formatter {
 	 */
 	public function __construct( $item = null ) {
 		$this->item = $item;
-
 	}
 
 	/**
@@ -29,14 +28,21 @@ abstract class Event_Details_Item_Formatter {
 	}
 
 	/**
+	 * @return Event_Details_Item
+	 */
+	public function get_item() {
+		return $this->item;
+	}
+
+	/**
 	 * @return string
 	 */
-	abstract public function get_html_output();
+	abstract public function to_html();
 
 	/**
 	 * @return array<mixed>
 	 */
-	abstract public function get_json_output();
+	abstract public function to_json();
 
 	/**
 	 * @return string
@@ -45,7 +51,7 @@ abstract class Event_Details_Item_Formatter {
 		$value_output = '';
 
 		if ( $this->item->is_changed ) {
-			$value_output = sprintf(
+			$value_output .= sprintf(
 				'
 				<ins class="SimpleHistoryLogitem__keyValueTable__addedThing">%1$s</ins>
 				<del class="SimpleHistoryLogitem__keyValueTable__removedThing">%2$s</del>	
@@ -54,7 +60,7 @@ abstract class Event_Details_Item_Formatter {
 				esc_html( $this->item->prev_value )
 			);
 		} else {
-			$value_output = sprintf(
+			$value_output .= sprintf(
 				'<span class="SimpleHistoryLogitem__keyValueTable__addedThing">%1$s</span>',
 				esc_html( $this->item->new_value )
 			);

@@ -15,35 +15,50 @@ class Setup_Settings_Page extends Service {
 	 * Adds default tabs to settings
 	 */
 	public function add_default_settings_tabs() {
-		$settings_tabs = $this->simple_history->get_settings_tabs();
-
 		// Add default settings tabs.
-		$settings_tabs[] = [
-			'slug' => 'settings',
-			'name' => __( 'Settings', 'simple-history' ),
-			'order' => 100,
-			'function' => [ $this, 'settings_output_general' ],
-		];
+		$this->simple_history->register_settings_tab(
+			[
+				'slug' => 'settings',
+				'name' => __( 'Settings', 'simple-history' ),
+				'icon' => 'settings',
+				'order' => 100,
+			]
+		);
+
+		// Add sub tabs.
+		$this->simple_history->register_settings_tab(
+			[
+				'parent_slug' => 'settings',
+				'slug' => 'general_settings_subtab_general',
+				'name' => __( 'General', 'simple-history' ),
+				'order' => 5,
+				'function' => [ $this, 'settings_output_general' ],
+			]
+		);
 
 		// Append dev tabs if SIMPLE_HISTORY_DEV is defined and true.
-		if ( defined( 'SIMPLE_HISTORY_DEV' ) && constant( 'SIMPLE_HISTORY_DEV' ) ) {
-			$arr_dev_tabs = [
+		if ( Helpers::dev_mode_is_enabled() ) {
+			$this->simple_history->register_settings_tab(
 				[
+
 					'slug' => 'log',
-					'name' => __( 'Log (debug)', 'simple-history' ),
+					'name' => __( 'Log (dev)', 'simple-history' ),
+					'order' => 5,
+					'icon' => 'overview',
 					'function' => [ $this, 'settings_output_log' ],
-				],
+				]
+			);
+
+			$this->simple_history->register_settings_tab(
 				[
 					'slug' => 'styles-example',
-					'name' => __( 'Styles example (debug)', 'simple-history' ),
+					'name' => __( 'Styles example (dev)', 'simple-history' ),
+					'order' => 5,
+					'icon' => 'overview',
 					'function' => [ $this, 'settings_output_styles_example' ],
 				],
-			];
-
-			$settings_tabs = [ ...$settings_tabs, ...$arr_dev_tabs ];
+			);
 		}
-
-		$this->simple_history->set_settings_tabs( $settings_tabs );
 	}
 
 	public function settings_output_log() {
@@ -88,7 +103,7 @@ class Setup_Settings_Page extends Service {
 
 		add_settings_section(
 			$settings_section_general_id,
-			__( 'General', 'simple-history' ),
+			Helpers::get_settings_section_title_output( __( 'General', 'simple-history' ), 'tune' ),
 			[ $this, 'settings_section_output' ],
 			$settings_menu_slug // Same slug as for options menu page.
 		);
@@ -118,7 +133,7 @@ class Setup_Settings_Page extends Service {
 
 		add_settings_field(
 			'simple_history_show_where',
-			__( 'Show history', 'simple-history' ),
+			Helpers::get_settings_field_title_output( __( 'Show history', 'simple-history' ), 'visibility' ),
 			array( $this, 'settings_field_where_to_show' ),
 			$settings_menu_slug,
 			$settings_section_general_id
@@ -127,7 +142,7 @@ class Setup_Settings_Page extends Service {
 		// Number if items to show on the history page.
 		add_settings_field(
 			'simple_history_number_of_items',
-			__( 'Number of items per page on the log page', 'simple-history' ),
+			Helpers::get_settings_field_title_output( __( 'Items per page', 'simple-history' ), 'filter_list' ),
 			array( $this, 'settings_field_number_of_items' ),
 			$settings_menu_slug,
 			$settings_section_general_id
@@ -136,15 +151,6 @@ class Setup_Settings_Page extends Service {
 		// Nonces for number of items inputs.
 		register_setting( $settings_general_option_group, 'simple_history_pager_size' );
 
-		// Number if items to show on dashboard.
-		add_settings_field(
-			'simple_history_number_of_items_dashboard',
-			__( 'Number of items per page on the dashboard', 'simple-history' ),
-			array( $this, 'settings_field_number_of_items_dashboard' ),
-			$settings_menu_slug,
-			$settings_section_general_id
-		);
-
 		// Nonces for number of items inputs.
 		register_setting( $settings_general_option_group, 'simple_history_pager_size_dashboard' );
 
@@ -152,7 +158,7 @@ class Setup_Settings_Page extends Service {
 		if ( $this->simple_history->user_can_clear_log() ) {
 			add_settings_field(
 				'simple_history_clear_log',
-				__( 'Clear log', 'simple-history' ),
+				Helpers::get_settings_field_title_output( __( 'Clear log', 'simple-history' ), 'auto-delete' ),
 				[ $this, 'settings_field_clear_log' ],
 				$settings_menu_slug,
 				$settings_section_general_id
@@ -171,7 +177,7 @@ class Setup_Settings_Page extends Service {
 		do_action( 'simple_history/settings_page/general_section_output' );
 	}
 
-		/**
+	/**
 	 * Settings field for where to show the log, page or dashboard
 	 */
 	public function settings_field_where_to_show() {
@@ -196,12 +202,20 @@ class Setup_Settings_Page extends Service {
 		<?php
 	}
 
+	public function settings_field_number_of_items() {
+		$this->settings_field_number_of_items_on_log_page();
+		echo '<br /><br />';
+		$this->settings_field_number_of_items_dashboard();
+	}
+
 	/**
 	 * Settings field for how many rows/items to show in log on the log page
 	 */
-	public function settings_field_number_of_items() {
+	private function settings_field_number_of_items_on_log_page() {
 		$current_pager_size = $this->simple_history->get_pager_size();
 		$pager_size_default_values = array( 5, 10, 15, 20, 25, 30, 40, 50, 75, 100 );
+
+		echo '<p>' . esc_html__( 'Number of items per page on the log page', 'simple-history' ) . '</p>';
 
 		// If number of items is controlled via filter then return early.
 		if ( has_filter( 'simple_history/pager_size' ) ) {
@@ -243,9 +257,11 @@ class Setup_Settings_Page extends Service {
 	/**
 	 * Settings field for how many rows/items to show in log on the dashboard
 	 */
-	public function settings_field_number_of_items_dashboard() {
+	private function settings_field_number_of_items_dashboard() {
 		$current_pager_size = $this->simple_history->get_pager_size_dashboard();
 		$pager_size_default_values = array( 5, 10, 15, 20, 25, 30, 40, 50, 75, 100 );
+
+		echo '<p>' . esc_html__( 'Number of items per page on the dashboard', 'simple-history' ) . '</p>';
 
 		// If number of items is controlled via filter then return early.
 		if ( has_filter( 'simple_history_pager_size_dashboard' ) || has_filter( 'simple_history/dashboard_pager_size' ) ) {
@@ -323,13 +339,43 @@ class Setup_Settings_Page extends Service {
 	 */
 	public function settings_page_output() {
 		$arr_settings_tabs = $this->simple_history->get_settings_tabs();
+		$arr_settings_tabs_sub = $this->simple_history->get_settings_tabs( 'sub' );
+
+		// Wrap link around title if we have somewhere to go.
+		$headline_link_target = null;
+		$headline_link_start_elm = '';
+		$headline_link_end_elm = '';
+
+		if ( $this->simple_history->setting_show_as_page() ) {
+			$headline_link_target = admin_url( 'index.php?page=simple_history_page' );
+		} else if ( $this->simple_history->setting_show_on_dashboard() ) {
+			$headline_link_target = admin_url( 'index.php' );
+		}
+
+		if ( ! is_null( $headline_link_target ) ) {
+			$headline_link_start_elm = sprintf(
+				'<a href="%1$s" class="sh-PageHeader-titleLink">',
+				esc_url( $headline_link_target )
+			);
+			$headline_link_end_elm = '</a>';
+		}
+
+		$allowed_link_html = [
+			'a' => [
+				'href' => 1,
+				'class' => 1,
+			],
+		];
 
 		?>
-		<div class="wrap">
-
-			<h1 class="SimpleHistoryPageHeadline">
-				<div class="dashicons dashicons-backup SimpleHistoryPageHeadline__icon"></div>
-				<?php esc_html_e( 'Simple History Settings', 'simple-history' ); ?>
+		<header class="sh-PageHeader">
+			<h1 class="sh-PageHeader-title SimpleHistoryPageHeadline">
+				<?php
+				echo wp_kses( $headline_link_start_elm, $allowed_link_html );
+				?>
+					<div class="dashicons dashicons-backup SimpleHistoryPageHeadline__icon"></div>
+					<?php esc_html_e( 'Simple History', 'simple-history' ); ?>
+				<?php echo wp_kses( $headline_link_end_elm, $allowed_link_html ); ?>
 			</h1>
 
 			<?php
@@ -337,24 +383,118 @@ class Setup_Settings_Page extends Service {
 			$settings_base_url = menu_page_url( $this->simple_history::SETTINGS_MENU_SLUG, 0 );
 			?>
 
-			<h2 class="nav-tab-wrapper">
+			<nav class="sh-PageNav">
 				<?php
 				foreach ( $arr_settings_tabs as $one_tab ) {
 					$tab_slug = $one_tab['slug'];
 
+					$icon_html = '';
+					if ( ! is_null( $one_tab['icon'] ?? null ) ) {
+						$icon_html = sprintf(
+							'<span class="sh-PageNav-icon sh-Icon--%1$s"></span>',
+							esc_attr( $one_tab['icon'] )
+						);
+					}
+
+					$icon_html_allowed_html = [
+						'span' => [
+							'class' => [],
+						],
+					];
+
 					printf(
-						'<a href="%3$s" class="nav-tab %4$s">%1$s</a>',
+						'<a href="%3$s" class="sh-PageNav-tab %4$s">%5$s%1$s</a>',
 						$one_tab['name'], // 1
 						$tab_slug, // 2
 						esc_url( add_query_arg( 'selected-tab', $tab_slug, $settings_base_url ) ), // 3
-						$active_tab == $tab_slug ? 'nav-tab-active' : '' // 4
+						$active_tab == $tab_slug ? 'is-active' : '', // 4
+						wp_kses( $icon_html, $icon_html_allowed_html ) // 5
 					);
 				}
 				?>
-			</h2>
+			</nav>
+		</header>
 
-			<?php
-			// Output contents for selected tab.
+		<?php
+		// Begin subnav.
+		$sub_tab_found = false;
+		$active_sub_tab = $_GET['selected-sub-tab'] ?? '';
+
+		// Get sub tabs for currently active tab.
+		$subtabs_for_active_tab = wp_filter_object_list(
+			$arr_settings_tabs_sub,
+			array(
+				'parent_slug' => $active_tab,
+			)
+		);
+
+		// Re-index array, so 0 is first sub tab.
+		$subtabs_for_active_tab = array_values( $subtabs_for_active_tab );
+
+		// If sub tabs are found but no active sub tab, then
+		// make first sub tab automatically active.
+		if ( count( $subtabs_for_active_tab ) > 0 && empty( $active_sub_tab ) ) {
+			$active_sub_tab = $subtabs_for_active_tab[0]['slug'];
+		}
+
+		if ( count( $subtabs_for_active_tab ) > 0 ) {
+
+			// Output subnav tabs if number of tabs are more than 1.
+			// If only one tab then no need to output subnav.
+			if ( count( $subtabs_for_active_tab ) > 1 ) {
+				?>
+				<nav class="sh-SettingsTabs">
+					<ul class="sh-SettingsTabs-tabs">
+						<?php
+						foreach ( $subtabs_for_active_tab as $one_sub_tab ) {
+							$is_active = $active_sub_tab === $one_sub_tab['slug'];
+							$is_active_class = $is_active ? 'is-active' : '';
+							$plug_settings_tab_url = add_query_arg( 'selected-sub-tab', $one_sub_tab['slug'], $settings_base_url );
+
+							?>
+							<li class="sh-SettingsTabs-tab">
+								<a class="sh-SettingsTabs-link <?php echo esc_attr( $is_active_class ); ?>" href="<?php echo esc_url( $plug_settings_tab_url ); ?>">
+									<?php echo esc_html( $one_sub_tab['name'] ); ?>
+								</a>
+							</li>
+							<?php
+						}
+						?>
+					</ul>
+				</nav>
+				<?php
+			}
+
+			// Get the active sub tab and call its output function.
+			$active_sub_tabs = wp_filter_object_list(
+				$arr_settings_tabs_sub,
+				array(
+					'parent_slug' => $active_tab,
+					'slug' => $active_sub_tab,
+				)
+			);
+
+			$active_sub_tab = reset( $active_sub_tabs );
+			$sub_tab_found = is_array( $active_sub_tab );
+
+			if ( $sub_tab_found ) {
+				if ( is_callable( $active_sub_tab['function'] ) ) {
+					call_user_func( $active_sub_tab['function'] );
+				} else {
+					echo esc_html(
+						sprintf(
+							'Function not found for sub tab "%1$s".',
+							$active_sub_tab['slug']
+						),
+						'simple-history-plus'
+					);
+				}
+			}
+		}
+
+		// Output contents for selected main tab,
+		// if no sub tab outputted content.
+		if ( ! $sub_tab_found ) {
 			$arr_active_tab = wp_filter_object_list(
 				$arr_settings_tabs,
 				array(
@@ -373,9 +513,6 @@ class Setup_Settings_Page extends Service {
 			);
 
 			call_user_func_array( $arr_active_tab['function'], array_values( $args ) );
-			?>
-
-		</div>
-		<?php
+		}
 	}
 }

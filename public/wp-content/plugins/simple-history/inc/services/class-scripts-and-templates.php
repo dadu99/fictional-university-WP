@@ -2,6 +2,8 @@
 
 namespace Simple_History\Services;
 
+use Simple_History\Simple_History;
+
 class Scripts_And_Templates extends Service {
 	public function loaded() {
 		add_action( 'admin_footer', array( $this, 'add_js_templates' ) );
@@ -130,6 +132,13 @@ class Scripts_And_Templates extends Service {
 			wp_enqueue_style(
 				'simple_history_styles',
 				SIMPLE_HISTORY_DIR_URL . 'css/styles.css',
+				false,
+				SIMPLE_HISTORY_VERSION
+			);
+
+			wp_enqueue_style(
+				'simple_history_utility_styles',
+				SIMPLE_HISTORY_DIR_URL . 'css/utility-classes.css',
 				false,
 				SIMPLE_HISTORY_VERSION
 			);

@@ -4,7 +4,7 @@ Contributors: eskapism
 Donate link: https://www.paypal.me/eskapism
 Tags: history, log, changes, changelog, audit, audit log, event log, user tracking, trail, pages, attachments, users, dashboard, admin, syslog, feed, activity, stream, audit trail, brute-force
 Tested up to: 6.3
-Stable tag: 4.5.0
+Stable tag: 4.6.0
 
 View changes made by users within WordPress. See who created a page, uploaded an attachment or approved an comment, and more.
 
@@ -93,6 +93,8 @@ Plugin authors can add support for Simple History in their plugins using the [lo
 
 [300+ five-star reviews](https://wordpress.org/support/plugin/simple-history/reviews/?filter=5) speak to the reliability of this plugin.
 
+- _"So far the best and most comprehensive logging plugin"_ - [@herrschuessler](https://wordpress.org/support/topic/so-far-the-best-and-most-comprehensive-logging-plugin/)
+
 - _"The best history plugin I’ve found"_ – [Rich Mehta](https://wordpress.org/support/topic/the-best-history-plugin-ive-found/)
 
 - _"Custom Logs Are Crazy Awesome!"_ - [Ahmad Awais](https://wordpress.org/support/topic/awesome-4654/)
@@ -108,14 +110,6 @@ Plugin authors can add support for Simple History in their plugins using the [lo
 - _"The best free history plugin ever"_ - [abazeed](https://wordpress.org/support/topic/the-best-free-history-plugin-ever/)
 
 - _"It is a standard plugin for all of our sites"_ - [Mr Tibbs](https://wordpress.org/support/topic/it-is-a-standard-plugin-for-all-of-our-sites/)
-
-- _"Easy to use, simple interface"_ - [Deborah Edwards-Onoro](https://wordpress.org/support/topic/easy-to-use-simple-interface/)
-
-- _"Very helpful"_ - [Martin Sauter](https://wordpress.org/support/topic/very-helpful-1280/)
-
-- _"Light Weight and Easy to Use – A Great Plugin."_ - [martinsmagic](https://wordpress.org/support/topic/light-weight-and-easy-to-use-a-great-plugin/)
-
-- _"Indispensable wordpress tool"_ - [blueappleeducation](https://wordpress.org/support/topic/indispensable-wordpress-tool/)
 
 ### RSS feed with changes
 
@@ -217,6 +211,20 @@ This can be modified using the filter [`simple_history/db_purge_days_interval`](
    A simple way to see any uncommon activity, for example an increased number of logins or similar.
 
 ## Changelog
+
+### 4.6.0 (September 2023)
+
+This release contains some new filters and some other improvements.
+[See the release post for more info](https://simple-history.com/2023/simple-history-4-6-0/).
+
+- Added: Filter `simple_history/get_log_row_plain_text_output/output` to be able to modify the output of the plain text output of a log row. Solves support thread [Is it possible to log post ID](https://wordpress.org/support/topic/is-it-possible-to-log-post-id/). See [documentation page for filter](https://simple-history.com/docs/hooks/#simplehistorygetlogrowplaintextoutputoutput) for details.
+- Added: Filter `simple_history/log_insert_data_and_context` to be able to modify the data and context that is inserted into the log.
+- Added: WP-CLI command now includes "via" in output.
+- Added: Debug settings tab now shows if a logger is enabled or disabled.
+- Changed: WP-CLI: ID field is not the first column and in uppercase, to follow the same format as the other wp cli commands use.
+- Changed: GUI enhancements on settings page.
+- Changed: Don't log WooCommerce post type `shop_order_placehold`, that is used by WooCommerce new [High-Performance Order Storage (HPOS)](https://developer.woocommerce.com/2022/10/11/hpos-upgrade-faqs/).
+- Fixed: Allow direct access to protected class variable `$logger->slug` but mark access as deprectad and recommend usage of `$logger->get_slug()`. Fixes support thread [PHP fatal error Cannot access protected property $slug](https://wordpress.org/support/topic/php-fatal-error-cannot-access-protected-property-slug/).
 
 ### 4.5.0 (August 2023)
 

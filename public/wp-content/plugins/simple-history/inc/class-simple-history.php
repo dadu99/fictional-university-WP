@@ -7,9 +7,13 @@ use Simple_History\Loggers\Logger;
 use Simple_History\Loggers\Simple_Logger;
 use Simple_History\Dropins;
 use Simple_History\Dropins\Dropin;
+use Simple_History\Event_Details\Event_Details_Container;
 use Simple_History\Helpers;
 use Simple_History\Services;
 use Simple_History\Services\Service;
+use Simple_History\Event_Details\Event_Details_Simple_Container;
+use Simple_History\Event_Details\Event_Details_Container_Interface;
+use Simple_History\Event_Details\Event_Details_Group;
 
 /**
  * Main class for Simple History.
@@ -32,7 +36,7 @@ class Simple_History {
 	/** Array with external dropins to load. */
 	private array $external_dropins = [];
 
-	/** Array with all instantiated loggers. */
+	/** @var array Array with all instantiated loggers. */
 	private array $instantiated_loggers = [];
 
 	/** Array with all instantiated dropins. */
@@ -70,6 +74,8 @@ class Simple_History {
 	}
 
 	/**
+	 * Called on class construct.
+	 *
 	 * @since 2.5.2
 	 */
 	public function init() {
@@ -122,6 +128,8 @@ class Simple_History {
 			Services\Dashboard_Widget::class,
 			Services\Network_Menu_Items::class,
 			Services\Plugin_List_Link::class,
+			Services\Plus_Licences::class,
+			Services\Licences_Settings_Page::class,
 		];
 	}
 
@@ -357,6 +365,45 @@ class Simple_History {
 	}
 
 	/**
+	 * Register a PLUS plugin that has support for licences.
+	 *
+	 * @param string $plugin_id Id of plugin, eg basenamed path + index file: "simple-history-plus-woocommerce/index.php".
+	 * @param string $plugin_slug Slug of plugin, eg "simple-history-plus-woocommerce".
+	 * @param string $version Current version of plugin, eg "1.0.0".
+	 * @param string $plugin_name Name of plugin, eg "Simple History Plus WooCommerce".
+	 * @param int $product_id ID of product that this plugin is for.
+	 * @return bool True if plugin was registered, false if not.
+	 */
+	public function register_plugin_with_license( $plugin_id, $plugin_slug, $version, $plugin_name, $product_id ) {
+		/** @var Services\Plus_Licences|null $licences_service */
+		$licences_service = $this->get_service( Services\Plus_Licences::class );
+
+		if ( is_null( $licences_service ) ) {
+			return false;
+		}
+
+		$licences_service->register_plugin_for_license( $plugin_id, $plugin_slug, $version, $plugin_name, $product_id );
+
+		return true;
+	}
+
+	/**
+	 * Get an instantiated service by its class name.
+	 *
+	 * @param string $service_classname Class name of service to get.
+	 * @return Service|null Found service or null if no service found.
+	 */
+	public function get_service( $service_classname ) {
+		foreach ( $this->instantiated_services as $service ) {
+			if ( get_class( $service ) === $service_classname ) {
+				return $service;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Register an external dropin so Simple History knows about it.
 	 * Does not load the dropin, so file with dropin class must be loaded already.
 	 *
@@ -444,7 +491,7 @@ class Simple_History {
 			Dropins\Sidebar_Dropin::class,
 			Dropins\Sidebar_Settings_Dropin::class,
 			Dropins\WP_CLI_Dropin::class,
-			Dropins\Development_Dropin::class,
+			Dropins\Event_Details_Dev_Dropin::class,
 			Dropins\Quick_Stats::class,
 		);
 
@@ -529,7 +576,7 @@ class Simple_History {
 	 * @return bool
 	 */
 	public function is_on_our_own_pages( $hook = '' ) {
-		$current_screen = get_current_screen();
+		$current_screen = Helpers::get_current_screen();
 
 		$basePrefix = apply_filters( 'simple_history/admin_location', 'index' );
 		$basePrefix = $basePrefix === 'index' ? 'dashboard' : $basePrefix;
@@ -585,9 +632,22 @@ class Simple_History {
 	 *     @type string   $name Human friendly name of the tab, shown on the settings page.
 	 *     @type int      $order Order of the tab, where higher number means earlier output,
 	 *     @type callable $function Function that will show the settings tab output.
+	 *     @type string   $parent_slug Slug of parent tab, if this is a sub tab.
 	 * }
 	 */
 	public function register_settings_tab( $arr_tab_settings ) {
+		$arr_tab_settings = wp_parse_args(
+			$arr_tab_settings,
+			[
+				'slug' => null,
+				'parent_slug' => null,
+				'name' => null,
+				'icon' => null,
+				'function' => null,
+				'order' => 10,
+			]
+		);
+
 		$this->arr_settings_tabs[] = $arr_tab_settings;
 	}
 
@@ -599,9 +659,10 @@ class Simple_History {
 	 *
 	 * Tabs with no order is outputted last.
 	 *
+	 * @param string $type Type of tabs to get. Can be "top" or "sub".
 	 * @return array
 	 */
-	public function get_settings_tabs() {
+	public function get_settings_tabs( $type = 'top' ) {
 		// Sort by order, where higher number means earlier output.
 		usort(
 			$this->arr_settings_tabs,
@@ -612,7 +673,20 @@ class Simple_History {
 			}
 		);
 
-		return $this->arr_settings_tabs;
+		// Filter out tabs that are not of the type we want.
+		$settings_tabs_of_selected_type = array_filter(
+			$this->arr_settings_tabs,
+			function( $tab ) use ( $type ) {
+				if ( $type === 'top' ) {
+					return empty( $tab['parent_slug'] );
+				} elseif ( $type === 'sub' ) {
+					return ! empty( $tab['parent_slug'] );
+				}
+				return false;
+			}
+		);
+
+		return $settings_tabs_of_selected_type;
 	}
 
 	/**
@@ -624,8 +698,6 @@ class Simple_History {
 	public function set_settings_tabs( $arr_settings_tabs ) {
 		$this->arr_settings_tabs = $arr_settings_tabs;
 	}
-
-
 
 	/**
 	 * Detect clear log query arg and clear log if it is set and valid.
@@ -700,7 +772,10 @@ class Simple_History {
 	public function get_clear_history_interval() {
 		$days = 60;
 
-		// Deprecated filter name, use `simple_history/db_purge_days_interval` instead.
+		/**
+		 * Deprecated filter name, use `simple_history/db_purge_days_interval` instead.
+		 * @deprecated
+		 */
 		$days = (int) apply_filters( 'simple_history_db_purge_days_interval', $days );
 
 		/**
@@ -773,21 +848,42 @@ class Simple_History {
 	 * @return string
 	 */
 	public function get_log_row_plain_text_output( $row ) {
-		$row_logger = $row->logger;
+		$row_logger_slug = $row->logger;
 		$row->context = isset( $row->context ) && is_array( $row->context ) ? $row->context : array();
 
 		if ( ! isset( $row->context['_message_key'] ) ) {
 			$row->context['_message_key'] = null;
 		}
 
-		// Fallback to SimpleLogger if no logger exists for row
-		if ( ! isset( $this->instantiated_loggers[ $row_logger ] ) ) {
-			$row_logger = 'SimpleLogger';
+		$logger = $this->get_instantiated_logger_by_slug( $row_logger_slug );
+
+		// Fallback to SimpleLogger if no logger exists for row.
+		if ( $logger === false ) {
+			$logger = $this->get_instantiated_logger_by_slug( 'Simple_Logger' );
 		}
 
-		$logger = $this->instantiated_loggers[ $row_logger ]['instance'];
+		// Bail if no logger found.
+		if ( $logger === false ) {
+			return '';
+		}
 
-		return $logger->get_log_row_plain_text_output( $row );
+		/**
+		 * Filter the plain text output for a log row.
+		 *
+		 * @since 4.6.0
+		 *
+		 * @param string $output Plain text output for a log row.
+		 * @param object $row Log row object.
+		 * @param Logger $logger Logger instance.
+		 */
+		$output = apply_filters(
+			'simple_history/get_log_row_plain_text_output/output',
+			$logger->get_log_row_plain_text_output( $row ),
+			$row,
+			$logger
+		);
+
+		return $output;
 	}
 
 	/**
@@ -836,18 +932,36 @@ class Simple_History {
 		return $logger->get_log_row_sender_image_output( $row );
 	}
 
+	/**
+	 * Return details output for a log row.
+	 *
+	 * @param object $row
+	 * @return string|Event_Details_Container_Interface
+	 */
 	public function get_log_row_details_output( $row ) {
 		$row_logger = $row->logger;
 		$row->context = isset( $row->context ) && is_array( $row->context ) ? $row->context : array();
 
 		// Fallback to SimpleLogger if no logger exists for row
-		if ( ! isset( $this->instantiated_loggers[ $row_logger ] ) ) {
-			$row_logger = 'SimpleLogger';
+		$logger = $this->get_instantiated_logger_by_slug( $row_logger );
+		if ( $logger === false ) {
+			$logger = $this->get_instantiated_logger_by_slug( 'Simple_Logger' );
 		}
 
-		$logger = $this->instantiated_loggers[ $row_logger ]['instance'];
+		// Bail if no logger found.
+		if ( $logger === false ) {
+			return new Event_Details_Simple_Container();
+		}
 
-		return $logger->get_log_row_details_output( $row );
+		$logger_details_output = $logger->get_log_row_details_output( $row );
+
+		if ( $logger_details_output instanceof Event_Details_Container_Interface ) {
+			return $logger_details_output;
+		} else if ( $logger_details_output instanceof Event_Details_Group ) {
+			return new Event_Details_Container( $logger_details_output, $row->context );
+		} else {
+			return new Event_Details_Simple_Container( $logger_details_output );
+		}
 	}
 
 	/**
@@ -868,7 +982,7 @@ class Simple_History {
 		$plain_text_html = $this->get_log_row_plain_text_output( $oneLogRow );
 		$sender_image_html = $this->get_log_row_sender_image_output( $oneLogRow );
 
-		// Details = for example thumbnail of media
+		// Details = for example thumbnail of media.
 		$details_html = trim( $this->get_log_row_details_output( $oneLogRow ) );
 		if ( $details_html !== '' ) {
 			$details_html = sprintf( '<div class="SimpleHistoryLogitem__details">%1$s</div>', $details_html );
@@ -1194,7 +1308,7 @@ class Simple_History {
 	/**
 	 * Get instantiated loggers.
 	 *
-	 * @return array
+	 * @return array<array<string,Logger>>
 	 */
 	public function get_instantiated_loggers() {
 		return $this->instantiated_loggers;
@@ -1315,7 +1429,7 @@ class Simple_History {
 			 * ```
 			 *
 			 * @param bool $user_can_read_logger Whether the user is allowed to view the logger.
-			 * @param Simple_Logger $logger Logger instance.
+			 * @param Logger $logger Logger instance.
 			 * @param int $user_id Id of user.
 			 */
 			$user_can_read_logger = apply_filters(
