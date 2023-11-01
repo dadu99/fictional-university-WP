@@ -1,3 +1,5 @@
+@import url(icons.css);
+
 /* clearfix */
 .SimpleHistory__cf:before,
 .SimpleHistory__cf:after {
@@ -456,9 +458,40 @@ Images/thumbs can be styles nicely
 }
 
 /*
-customizations for the dashboard
-i.e. the log is inside a .postbox element
+Customizations for the dashboard,
+i.e. the log is inside a .postbox element.
 */
+#simple_history_dashboard_widget .postbox-header {
+	background-image: url(./simple-history-logo-icon.svg);
+	background-repeat: no-repeat;
+	background-size: 20px;
+	background-position: 12px center;
+	/* -webkit-mask-image: url(./simple-history-logo-icon.svg); */
+}
+
+.postbox.closed .sh-Dashboard-settingsLink {
+	display: none;
+}
+
+.sh-Dashboard-settingsLink {
+	background-color: #787c82;
+	mask-image: url(./icons/settings_FILL0_wght400_GRAD0_opsz48.svg);
+	-webkit-mask-image: url(./icons/settings_FILL0_wght400_GRAD0_opsz48.svg);
+	mask-size: 100%;
+	-webkit-mask-size: 100%;
+}
+
+.sh-Dashboard-settingsLink:focus {
+	box-shadow: 0 0 0 1px #4f94d4, 0 0 2px 1px rgba(79, 148, 212, 0.8);
+	mask-image: none;
+	background-color: transparent;
+	background-image: url(./icons/settings_FILL0_wght400_GRAD0_opsz48.svg);
+}
+
+#simple_history_dashboard_widget .postbox-header h2 {
+	margin-left: 25px;
+}
+
 #simple_history_dashboard_widget .inside {
 	padding: 0;
 	margin-top: 0;
@@ -844,14 +877,6 @@ Modal window with detailss
 	text-decoration: none;
 }
 
-/* icon on log page*/
-.SimpleHistoryPageHeadline__icon {
-	font-size: 24px;
-	line-height: 30px;
-	width: 24px;
-	color: rgb(63, 147, 73);
-}
-
 /* if not hits when using filter function + if ajax error */
 
 .SimpleHistory--hasNoHits .SimpleHistoryLogitems__pagination {
@@ -951,6 +976,7 @@ Modal window with detailss
 }
 
 :root {
+	--sh-color-gray: #c3c4c7;
 	--sh-color-green: #3f9349;
 }
 
@@ -960,22 +986,58 @@ Modal window with detailss
  */
 .sh-PageHeader {
 	margin: 0 0 2rem -20px;
-	padding: 1rem 2rem 0 2rem;
+	padding: 1.5rem;
 	background: #fff;
-	border-bottom: 1px solid #8cac90;
+	border-bottom: 1px solid var(--sh-color-gray);
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	column-gap: 1rem;
 }
 
 .sh-PageHeader-title {
+	flex: 1;
 	font-size: 23px;
 	font-weight: 400;
 	margin: 0;
-	padding: 9px 0 4px;
-	line-height: 1.3;
+	line-height: 1;
+}
+
+.sh-PageHeader-logo {
+	width: 200px;
+	height: auto;
 }
 
 .sh-PageHeader-titleLink {
+	display: block;
 	color: inherit;
 	text-decoration: none;
+}
+
+.sh-PageHeader-rightLink {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.sh-PageHeader-settingsLinkIcon {
+	--icon-size: 25px;
+}
+
+.sh-PageHeader-settingsLinkIcon-new {
+	font-style: normal;
+	display: inline-block;
+	text-transform: uppercase;
+	font-size: 0.8em;
+	background: green;
+	text-decoration: underline;
+	text-decoration-color: green;
+	padding: 3px 4px;
+	line-height: 1;
+	border-radius: 3px;
+	color: #eee;
+	margin-left: 0.1em;
 }
 
 .sh-Page-content {
@@ -983,9 +1045,11 @@ Modal window with detailss
 }
 
 .sh-PageNav {
+	width: 100%;
 	display: flex;
 	margin-top: 1rem;
 	margin-left: -1rem;
+	margin-bottom: -1.5rem;
 	gap: 2rem;
 }
 
@@ -1021,7 +1085,16 @@ Modal window with detailss
 	color: #3c434a;
 }
 
-.sh-SettingsPage-settingsSectionTitle {
+.sh-SettingsPage-settingsSection-wrap {
+	padding: 1rem 0;
+	margin: 1rem 0;
+}
+
+.sh-SettingsPage-settingsSection-wrap h2 {
+	margin: 0;
+}
+
+.sh-SettingsPage-settingsSection-title {
 	display: block;
 	font-size: 23px;
 	font-weight: 400;
@@ -1034,7 +1107,7 @@ Modal window with detailss
 	--icon-size: 24px;
 	width: var(--icon-size);
 	height: var(--icon-size);
-	background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg);
+	/* background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg); */
 	display: inline-block;
 	background-size: 100%;
 	vertical-align: middle;
@@ -1047,7 +1120,7 @@ Modal window with detailss
 	--icon-size: 20px;
 	width: var(--icon-size);
 	height: var(--icon-size);
-	background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg);
+	/* background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg); */
 	display: inline-block;
 	background-size: 100%;
 	vertical-align: middle;
@@ -1061,145 +1134,13 @@ Modal window with detailss
 	--icon-size: 20px;
 	width: var(--icon-size);
 	height: var(--icon-size);
-	background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg);
+	/* background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg); */
 	display: inline-block;
 	background-size: 100%;
 	vertical-align: middle;
 	margin-right: 0.5em;
 	position: relative;
 	top: -2px;
-}
-
-.sh-Icon--visibility {
-	background-image: url(./icons/visibility_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--dashboard {
-	background-image: url(./icons/dashboard_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--info {
-	background-image: url(./icons/info_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--overview {
-	background-image: url(./icons/overview_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--auto-delete {
-	background-image: url(./icons/auto_delete_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--toggle-on {
-	background-image: url(./icons/toggle_on_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--link {
-	background-image: url(./icons/link_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--edit {
-	background-image: url(./icons/edit_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--autorenew {
-	background-image: url(./icons/autorenew_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--format_list_numbered {
-	background-image: url(./icons/format_list_numbered_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--filter_list {
-	background-image: url(./icons/filter_list_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--rss_feed {
-	background-image: url(./icons/rss_feed_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--tune {
-	background-image: url(./icons/tune_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--settings {
-	background-image: url(./icons/settings_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--volunteer_activism {
-	background-image: url(./icons/volunteer_activism_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--thumb_up {
-	background-image: url(./icons/thumb_up_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--workspace_premium {
-	background-image: url(./icons/workspace_premium_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--verified {
-	background-image: url(./icons/verified_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--add_box {
-	background-image: url(./icons/add_box_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--pages {
-	background-image: url(./icons/pages_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--archive {
-	background-image: url(./icons/archive_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--download {
-	background-image: url(./icons/download_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--troubleshoot {
-	background-image: url(./icons/troubleshoot_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--build {
-	background-image: url(./icons/build_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--archive {
-	background-image: url(./icons/archive_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--map {
-	background-image: url(./icons/map_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--account_circle {
-	background-image: url(./icons/account_circle_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--no_accounts {
-	background-image: url(./icons/no_accounts_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--merge_type {
-	background-image: url(./icons/merge_type_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--vpn_lock {
-	background-image: url(./icons/vpn_lock_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--lock_clock {
-	background-image: url(./icons/lock_clock_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--key {
-	background-image: url(./icons/key_FILL0_wght400_GRAD0_opsz48.svg);
-}
-
-.sh-Icon--web {
-	background-image: url(./icons/web_FILL0_wght400_GRAD0_opsz48.svg);
 }
 
 /** Subtabs on settings page */
@@ -1263,4 +1204,27 @@ a.sh-SettingsTabs-link:hover {
 }
 .sh-mr-3 {
 	margin-right: 0.75rem; /* 12px */
+}
+
+.sh-LicencesPage-plugin {
+	background: #fff;
+	border-radius: 0.5rem;
+	margin-bottom: 2rem;
+	padding: 1.5rem;
+}
+
+.form-table .sh-LicencesPage-plugin-name {
+	margin: 0;
+	font-weight: bold;
+	font-size: 1.25em;
+	font-weight: 400;
+}
+
+.form-table .sh-LicencesPage-plugin-version {
+	color: #888;
+	margin-bottom: 1rem;
+}
+
+.form-table .sh-LicencesPage-plugin-active {
+	margin-bottom: 1rem;
 }

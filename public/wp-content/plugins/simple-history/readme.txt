@@ -3,8 +3,8 @@
 Contributors: eskapism
 Donate link: https://www.paypal.me/eskapism
 Tags: history, log, changes, changelog, audit, audit log, event log, user tracking, trail, pages, attachments, users, dashboard, admin, syslog, feed, activity, stream, audit trail, brute-force
-Tested up to: 6.3
-Stable tag: 4.6.0
+Tested up to: 6.4
+Stable tag: 4.7.2
 
 View changes made by users within WordPress. See who created a page, uploaded an attachment or approved an comment, and more.
 
@@ -69,18 +69,15 @@ By default Simple History comes with built in support for the following plugins:
   and has not been updated for 4 years. However it still has +1 million installs, so many users will benefit from
   Simple History logging login attempts, lockouts, and configuration changes made in the plugin Limit Login Attempts.
 
-- **Redirection** – The [redirection plugin](https://wordpress.org/plugins/redirection/) manages url redirections, using a nice GUI.
-  Simple History will log redirects and groups that are created, changed, enabled or disabled and also when the global plugin settings have been modified.
+- **Redirection** – The [redirection plugin](https://wordpress.org/plugins/redirection/) manages url redirections, using a nice GUI. Simple History will log redirects and groups that are created, changed, enabled or disabled and also when the global plugin settings have been modified.
 
-- **Duplicate Post** – The plugin [Duplicate Post](https://wordpress.org/plugins/duplicate-post/) allows users to
-  clone posts of any type.
-  Simple History will log when a clone of a post or page is done.
+- **Duplicate Post** – The plugin [Duplicate Post](https://wordpress.org/plugins/duplicate-post/) allows users to clone posts of any type. Simple History will log when a clone of a post or page is done.
 
-- **Beaver Builder** – The plugin [Beaver Build](https://wordpress.org/plugins/beaver-builder-lite-version/) is a page builder for WordPress that adds a flexible drag and drop page builder to the front end of your WordPress website.
-  Simple History will log when a Beaver Builder layout or template is saved or when the settings for the plugins are saved.
+- **Beaver Builder** – The plugin [Beaver Build](https://wordpress.org/plugins/beaver-builder-lite-version/) is a page builder for WordPress that adds a flexible drag and drop page builder to the front end of your WordPress website. Simple History will log when a Beaver Builder layout or template is saved or when the settings for the plugins are saved.
 
 Plugin authors can add support for Simple History in their plugins using the [logging API](https://simple-history.com/docs/logging-api/). Plugins that have support for Simple History includes:
 
+- [Connections Business Directory](https://wordpress.org/plugins/connections/)
 - [Simple History Beaver Builder Add-On](https://wordpress.org/plugins/extended-simple-history-for-beaver-builder/)
 - [WP-Optimize – Cache, Clean, Compress.](https://wordpress.org/plugins/wp-optimize/)
 - [Add Customer for WooCommerce](https://wordpress.org/plugins/add-customer-for-woocommerce/)
@@ -189,7 +186,7 @@ See the [hooks documentation](https://simple-history.com/docs/hooks/) for more i
 
 Events in the log are stored for 60 days by default. Events older than this will be removed.
 
-This can be modified using the filter [`simple_history/db_purge_days_interval`](https://simple-history.com/docs/hooks/#simplehistorydbpurgedaysinterval) or using the upcoming [Simple History Plus add-on](https://simple-history.com/simple-history-plus/).
+This can be modified using the filter [`simple_history/db_purge_days_interval`](https://simple-history.com/docs/hooks/#simplehistorydbpurgedaysinterval) or using the [Simple History Extended Settings add-on](https://simple-history.com/add-ons/extended-settings?utm_source=wpadmin).
 
 ## Screenshots
 
@@ -211,6 +208,29 @@ This can be modified using the filter [`simple_history/db_purge_days_interval`](
    A simple way to see any uncommon activity, for example an increased number of logins or similar.
 
 ## Changelog
+
+### 4.7.2 (October 2023)
+
+- Changed: Check that a service class exists before trying to instantiate it.
+- Added [Connection Business Directory](https://simple-history.com/2023/connections-business-directory-adds-support-for-simple-history/) to list of plugins with Simple History support.
+- Added new icons! ✨
+- Tested on WordPress 6.4.
+
+### 4.7.1 (October 2023)
+
+- Fix: Only context table was cleared when clearing the database. Now also the events table is cleared.
+- Add function `AddOns_Licences::get_plugin()`.
+- Misc internal code cleanup and improvements.
+
+### 4.7.0 (October 2023)
+
+Most notable in this release is the new logotype and a new shortcut to the "Settings & Tools" page.
+[Read the release post for more info](https://simple-history.com/2023/simple-history-4-7-0/).
+
+- Changed: UI changes, including a new logo and a shortcut to the settings page.
+- Add function `get_view_history_page_admin_url()`.
+- Add filter `simple_history/log_row_details_output-{logger_slug}` to allow modifying the output of the details of a log row.
+- Misc internal code cleanup and improvements.
 
 ### 4.6.0 (September 2023)
 

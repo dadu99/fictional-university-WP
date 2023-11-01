@@ -3,15 +3,15 @@
 namespace Simple_History\Services;
 
 use Simple_History\Plugin_Updater;
-use Simple_History\Plus_Plugin;
+use Simple_History\AddOn_Plugin;
 
-class Plus_Licences extends Service {
+class AddOns_Licences extends Service {
 	/**
-	 * Array with info about all plus-plugins.
+	 * Array with info about all add-on-plugins.
 	 *
-	 * @var array<Plus_Plugin>
+	 * @var array<AddOn_Plugin>
 	 */
-	private $plus_plugins = [];
+	private $addon_plugins = [];
 
 	public function loaded() {
 		// When loggers are instantiated, register plugin updaters simple_history/loggers/instantiated.
@@ -19,19 +19,38 @@ class Plus_Licences extends Service {
 	}
 
 	/**
-	 * Get all plus-plugins.
+	 * Get all add-on-plugins.
 	 *
-	 * @return array<Plus_Plugin>
+	 * @return array<AddOn_Plugin>
 	 */
-	public function get_plus_plugins() {
-		return $this->plus_plugins;
+	public function get_addon_plugins() {
+		return $this->addon_plugins;
 	}
 
 	/**
-	 * Register plugin updaters for all added plus-plugins.
+	 * Get a single add-on plugin, by slug.
+	 *
+	 * @param string $slug Slug of plugin, eg "simple-history-extended-settings".
+	 * @return AddOn_Plugin|null Plugin or null if not found.
+	 */
+	public function get_plugin( $slug ) {
+		return $this->addon_plugins[ $slug ] ?? null;
+	}
+
+	/**
+	 * Check if any add-ons are installed.
+	 *
+	 * @return bool
+	 */
+	public function has_add_ons() {
+		return count( $this->get_addon_plugins() ) > 0;
+	}
+
+	/**
+	 * Register plugin updaters for all added add-on-plugins.
 	 */
 	public function init_plugin_updater_for_registered_licence_plugins() {
-		foreach ( $this->get_plus_plugins() as $plugin ) {
+		foreach ( $this->get_addon_plugins() as $plugin ) {
 			$this->init_updater_for_plugin( $plugin );
 		}
 	}
@@ -47,13 +66,13 @@ class Plus_Licences extends Service {
 	 * @param int $product_id Product ID of plugin, eg 112341.
 	 */
 	public function register_plugin_for_license( $plugin_id, $plugin_slug, $version, $name, $product_id ) {
-		$this->plus_plugins[ $plugin_slug ] = new Plus_Plugin( $plugin_id, $plugin_slug, $version, $name, $product_id );
+		$this->addon_plugins[ $plugin_slug ] = new AddOn_Plugin( $plugin_id, $plugin_slug, $version, $name, $product_id );
 	}
 
 	/**
 	 * Init the plugin updater for a plugin.
 	 *
-	 * @param Plus_Plugin $plugin Plugin to init updater for.
+	 * @param AddOn_Plugin $plugin Plugin to init updater for.
 	 */
 	private function init_updater_for_plugin( $plugin ) {
 		/**

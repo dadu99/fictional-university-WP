@@ -7,7 +7,7 @@ use Simple_History\Helpers;
 class Setup_Settings_Page extends Service {
 	public function loaded() {
 		add_action( 'after_setup_theme', array( $this, 'add_default_settings_tabs' ) );
-		add_action( 'admin_menu', array( $this, 'add_settings' ) );
+		add_action( 'admin_menu', array( $this, 'add_settings' ), 10 );
 		add_action( 'admin_menu', array( $this, 'add_admin_pages' ) );
 	}
 
@@ -31,7 +31,7 @@ class Setup_Settings_Page extends Service {
 				'parent_slug' => 'settings',
 				'slug' => 'general_settings_subtab_general',
 				'name' => __( 'General', 'simple-history' ),
-				'order' => 5,
+				'order' => 100,
 				'function' => [ $this, 'settings_output_general' ],
 			]
 		);
@@ -101,9 +101,9 @@ class Setup_Settings_Page extends Service {
 		$settings_menu_slug = $this->simple_history::SETTINGS_MENU_SLUG;
 		$settings_general_option_group = $this->simple_history::SETTINGS_GENERAL_OPTION_GROUP;
 
-		add_settings_section(
+		Helpers::add_settings_section(
 			$settings_section_general_id,
-			Helpers::get_settings_section_title_output( __( 'General', 'simple-history' ), 'tune' ),
+			[ __( 'General', 'simple-history' ), 'tune' ],
 			[ $this, 'settings_section_output' ],
 			$settings_menu_slug // Same slug as for options menu page.
 		);
@@ -370,21 +370,32 @@ class Setup_Settings_Page extends Service {
 		?>
 		<header class="sh-PageHeader">
 			<h1 class="sh-PageHeader-title SimpleHistoryPageHeadline">
-				<?php
-				echo wp_kses( $headline_link_start_elm, $allowed_link_html );
-				?>
-					<div class="dashicons dashicons-backup SimpleHistoryPageHeadline__icon"></div>
-					<?php esc_html_e( 'Simple History', 'simple-history' ); ?>
+				<?php echo wp_kses( $headline_link_start_elm, $allowed_link_html ); ?>			
+				<img width="1102" height="196" class="sh-PageHeader-logo" src="<?php echo esc_attr( SIMPLE_HISTORY_DIR_URL ); ?>css/simple-history-logo.svg" alt="Simple History logotype"/>
 				<?php echo wp_kses( $headline_link_end_elm, $allowed_link_html ); ?>
 			</h1>
-
+			
 			<?php
-			$active_tab = $_GET['selected-tab'] ?? 'settings';
-			$settings_base_url = menu_page_url( $this->simple_history::SETTINGS_MENU_SLUG, 0 );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo Helpers::get_header_add_ons_link();
 			?>
+			
+			<?php
+			// Add link back to the log.
+			if ( $this->simple_history->setting_show_as_page() ) {
+				?>
+				<a href="<?php echo esc_url( $this->simple_history->get_view_history_page_admin_url() ); ?>" class="sh-PageHeader-rightLink">
+					<span class="sh-PageHeader-settingsLinkIcon sh-Icon sh-Icon--history"></span>
+					<span class="sh-PageHeader-settingsLinkText"><?php esc_html_e( 'Back to event log', 'simple-history' ); ?></span>
+				</a>
+				<?php
+			}
 
+			?>
 			<nav class="sh-PageNav">
 				<?php
+				$active_tab = $_GET['selected-tab'] ?? 'settings';
+
 				foreach ( $arr_settings_tabs as $one_tab ) {
 					$tab_slug = $one_tab['slug'];
 
@@ -406,7 +417,7 @@ class Setup_Settings_Page extends Service {
 						'<a href="%3$s" class="sh-PageNav-tab %4$s">%5$s%1$s</a>',
 						$one_tab['name'], // 1
 						$tab_slug, // 2
-						esc_url( add_query_arg( 'selected-tab', $tab_slug, $settings_base_url ) ), // 3
+						esc_url( Helpers::get_settings_page_tab_url( $tab_slug ) ),
 						$active_tab == $tab_slug ? 'is-active' : '', // 4
 						wp_kses( $icon_html, $icon_html_allowed_html ) // 5
 					);
@@ -449,7 +460,7 @@ class Setup_Settings_Page extends Service {
 						foreach ( $subtabs_for_active_tab as $one_sub_tab ) {
 							$is_active = $active_sub_tab === $one_sub_tab['slug'];
 							$is_active_class = $is_active ? 'is-active' : '';
-							$plug_settings_tab_url = add_query_arg( 'selected-sub-tab', $one_sub_tab['slug'], $settings_base_url );
+							$plug_settings_tab_url = Helpers::get_settings_page_sub_tab_url( $one_sub_tab['slug'] );
 
 							?>
 							<li class="sh-SettingsTabs-tab">

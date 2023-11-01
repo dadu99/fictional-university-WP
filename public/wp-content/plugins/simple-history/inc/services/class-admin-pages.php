@@ -2,6 +2,7 @@
 
 namespace Simple_History\Services;
 
+use Simple_History\Helpers;
 use Simple_History\Simple_History;
 
 class Admin_Pages extends Service {
@@ -38,7 +39,7 @@ class Admin_Pages extends Service {
 	}
 
 	/**
-	 * Output for page with the history
+	 * Output for page with the history.
 	 */
 	public function history_page_output() {
 		$pager_size = $this->simple_history->get_pager_size();
@@ -53,38 +54,63 @@ class Admin_Pages extends Service {
 		$pager_size = apply_filters( 'simple_history/page_pager_size', $pager_size );
 		?>
 
-		<div class="wrap SimpleHistoryWrap">
+		<div class="SimpleHistoryWrap">
 
-			<h1 class="SimpleHistoryPageHeadline">
-				<div class="dashicons dashicons-backup SimpleHistoryPageHeadline__icon"></div>
-				<?php echo esc_html_x( 'Simple History', 'history page headline', 'simple-history' ); ?>
-			</h1>
+			<header class="sh-PageHeader">
+				<h1 class="sh-PageHeader-title SimpleHistoryPageHeadline">
+					<img width="1102" height="196" class="sh-PageHeader-logo" src="<?php echo esc_attr( SIMPLE_HISTORY_DIR_URL ); ?>css/simple-history-logo.svg" alt="Simple History logotype"/>
+				</h1>
 
-			<?php
-			/**
-			 * Fires before the gui div
-			 *
-			 * @since 2.0
-			 *
-			 * @param Simple_History $instance This class.
-			 */
-			do_action( 'simple_history/history_page/before_gui', $this->simple_history );
-			?>
+				<?php
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo Helpers::get_header_add_ons_link();
+				?>
+				
+				<?php
+				// Add link to settings & tools.
+				if ( current_user_can( $this->simple_history->get_view_settings_capability() ) ) {
+					?>
+					<a href="<?php echo esc_url( menu_page_url( $this->simple_history::SETTINGS_MENU_SLUG, false ) ); ?>" class="sh-PageHeader-rightLink">
+						<span class="sh-PageHeader-settingsLinkIcon sh-Icon sh-Icon--settings"></span>
+						<span class="sh-PageHeader-settingsLinkText"><?php esc_html_e( 'Settings & Tools', 'simple-history' ); ?></span>
+					</a>
+					<?php
+				}
+				?>
+			</header>
 
-			<div class="SimpleHistoryGuiWrap">
+			<?php // WordPress will add notices after element with class .wp-header-end ?>
+			<hr class="wp-header-end">
 
-				<div class="SimpleHistoryGui" data-pager-size='<?php echo esc_attr( $pager_size ); ?>'>
-				</div>
+			<div class="wrap">
+
 				<?php
 				/**
-				 * Fires after the gui div
+				 * Fires before the gui div
 				 *
 				 * @since 2.0
 				 *
 				 * @param Simple_History $instance This class.
 				 */
-				do_action( 'simple_history/history_page/after_gui', $this->simple_history );
+				do_action( 'simple_history/history_page/before_gui', $this->simple_history );
 				?>
+
+				<div class="SimpleHistoryGuiWrap">
+
+					<div class="SimpleHistoryGui" data-pager-size='<?php echo esc_attr( $pager_size ); ?>'>
+					</div>
+					<?php
+					/**
+					 * Fires after the gui div
+					 *
+					 * @since 2.0
+					 *
+					 * @param Simple_History $instance This class.
+					 */
+					do_action( 'simple_history/history_page/after_gui', $this->simple_history );
+					?>
+				</div>
+
 			</div>
 
 		</div>

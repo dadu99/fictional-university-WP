@@ -4,7 +4,6 @@ namespace Simple_History;
 
 use Simple_History\Loggers;
 use Simple_History\Loggers\Logger;
-use Simple_History\Loggers\Simple_Logger;
 use Simple_History\Dropins;
 use Simple_History\Dropins\Dropin;
 use Simple_History\Event_Details\Event_Details_Container;
@@ -80,7 +79,7 @@ class Simple_History {
 	 */
 	public function init() {
 		/**
-		 * Fires before Simple History does it's init stuff
+		 * Fires before Simple History does it's init stuff.
 		 *
 		 * @since 2.0
 		 *
@@ -98,7 +97,7 @@ class Simple_History {
 		}
 
 		/**
-		 * Fires after Simple History has done it's init stuff
+		 * Fires after Simple History has done it's init stuff.
 		 *
 		 * @since 2.0
 		 *
@@ -128,8 +127,9 @@ class Simple_History {
 			Services\Dashboard_Widget::class,
 			Services\Network_Menu_Items::class,
 			Services\Plugin_List_Link::class,
-			Services\Plus_Licences::class,
+			Services\AddOns_Licences::class,
 			Services\Licences_Settings_Page::class,
+			Services\Plugin_List_Info::class,
 		];
 	}
 
@@ -146,8 +146,13 @@ class Simple_History {
 	 * Load a service class.
 	 */
 	private function load_service( $service_classname ) {
+		if ( ! class_exists( $service_classname ) ) {
+			return;
+		}
+
 		$service = new $service_classname( $this );
 		$service->loaded();
+
 		$this->instantiated_services[] = $service;
 	}
 
@@ -220,6 +225,7 @@ class Simple_History {
 	 */
 	private function setup_db_variables() {
 		global $wpdb;
+
 		$this::$dbtable = $wpdb->prefix . self::DBTABLE;
 		$this::$dbtable_contexts = $wpdb->prefix . self::DBTABLE_CONTEXTS;
 
@@ -375,8 +381,8 @@ class Simple_History {
 	 * @return bool True if plugin was registered, false if not.
 	 */
 	public function register_plugin_with_license( $plugin_id, $plugin_slug, $version, $plugin_name, $product_id ) {
-		/** @var Services\Plus_Licences|null $licences_service */
-		$licences_service = $this->get_service( Services\Plus_Licences::class );
+		/** @var Services\AddOns_Licences|null $licences_service */
+		$licences_service = $this->get_service( Services\AddOns_Licences::class );
 
 		if ( is_null( $licences_service ) ) {
 			return false;
@@ -612,10 +618,9 @@ class Simple_History {
 	public function does_database_have_data() {
 		global $wpdb;
 
-		$tableprefix = $wpdb->prefix;
-		$simple_history_table = self::DBTABLE;
+		$table_name = $this->get_events_table_name();
 
-		$sql_data_exists = "SELECT id AS id_exists FROM {$tableprefix}{$simple_history_table} LIMIT 1";
+		$sql_data_exists = "SELECT id AS id_exists FROM {$table_name} LIMIT 1";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$data_exists = (bool) $wpdb->get_var( $sql_data_exists, 0 );
 
@@ -633,6 +638,7 @@ class Simple_History {
 	 *     @type int      $order Order of the tab, where higher number means earlier output,
 	 *     @type callable $function Function that will show the settings tab output.
 	 *     @type string   $parent_slug Slug of parent tab, if this is a sub tab.
+	 *     @type string   $icon Icon to use for tab.
 	 * }
 	 */
 	public function register_settings_tab( $arr_tab_settings ) {
@@ -685,6 +691,9 @@ class Simple_History {
 				return false;
 			}
 		);
+
+		// Re-index.
+		$settings_tabs_of_selected_type = array_values( $settings_tabs_of_selected_type );
 
 		return $settings_tabs_of_selected_type;
 	}
@@ -815,22 +824,20 @@ class Simple_History {
 	public function clear_log() {
 		global $wpdb;
 
-		$tableprefix = $wpdb->prefix;
-
-		$simple_history_table = self::DBTABLE;
-		$simple_history_context_table = self::DBTABLE_CONTEXTS;
+		$simple_history_table = $this->get_events_table_name();
+		$simple_history_contexts_table = $this->get_contexts_table_name();
 
 		// Get number of rows before delete.
-		$sql_num_rows = "SELECT count(id) AS num_rows FROM {$tableprefix}{$simple_history_table}";
+		$sql_num_rows = "SELECT count(id) AS num_rows FROM {$simple_history_table}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$num_rows = $wpdb->get_var( $sql_num_rows, 0 );
 
 		// Use truncate instead of delete because it's much faster (I think, writing this much later).
-		$sql = "TRUNCATE {$tableprefix}{$simple_history_table}";
+		$sql = "TRUNCATE {$simple_history_table}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query( $sql );
 
-		$sql = "TRUNCATE {$tableprefix}{$simple_history_context_table}";
+		$sql = "TRUNCATE {$simple_history_contexts_table}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query( $sql );
 
@@ -936,7 +943,7 @@ class Simple_History {
 	 * Return details output for a log row.
 	 *
 	 * @param object $row
-	 * @return string|Event_Details_Container_Interface
+	 * @return string|Event_Details_Container_Interface|Event_Details_Group
 	 */
 	public function get_log_row_details_output( $row ) {
 		$row_logger = $row->logger;
@@ -958,6 +965,15 @@ class Simple_History {
 		if ( $logger_details_output instanceof Event_Details_Container_Interface ) {
 			return $logger_details_output;
 		} else if ( $logger_details_output instanceof Event_Details_Group ) {
+			/**
+			 * Filter the event details group output for a logger
+			 * that has returned an Event_Details_Group.
+			 *
+			 * @param Event_Details_Group $event_details_group
+			 * @param object $row
+			 * @return Event_Details_Group
+			 */
+			$logger_details_output = apply_filters( 'simple_history/log_row_details_output-' . $logger->get_slug(), $logger_details_output, $row );
 			return new Event_Details_Container( $logger_details_output, $row->context );
 		} else {
 			return new Event_Details_Simple_Container( $logger_details_output );
@@ -1499,7 +1515,7 @@ class Simple_History {
                     WHERE UNIX_TIMESTAMP(date) >= %2$d
                     AND logger IN %3$s
                 ',
-				$wpdb->prefix . self::DBTABLE,
+				$this->get_events_table_name(),
 				strtotime( "-$period_days days" ),
 				$sqlStringLoggersUserCanRead
 			);
@@ -1539,7 +1555,7 @@ class Simple_History {
                     GROUP BY yearDate
                     ORDER BY yearDate ASC
                 ',
-				$wpdb->prefix . self::DBTABLE,
+				$this->get_events_table_name(),
 				strtotime( "-$period_days days" ),
 				$sqlStringLoggersUserCanRead
 			);
@@ -1561,7 +1577,7 @@ class Simple_History {
 	public function get_unique_events_for_days( $days = 7 ) {
 		global $wpdb;
 		$days = (int) $days;
-		$table_name = $wpdb->prefix . self::DBTABLE;
+		$table_name = $this->get_events_table_name();
 		$cache_key = 'sh_' . md5( __METHOD__ . $days );
 		$numEvents = get_transient( $cache_key );
 
@@ -1640,5 +1656,14 @@ class Simple_History {
 
 		return call_user_func_array( array( $this, $method_name_to_call ), $arguments );
 
+	}
+
+	/**
+	 * Get the URL to the admin page where user views the history feed.
+	 *
+	 * @return string URL to admin page, for example http://wordpress-stable.test/wordpress/wp-admin/index.php?page=simple_history_page.
+	 */
+	public function get_view_history_page_admin_url() {
+		return admin_url( apply_filters( 'simple_history/admin_location', 'index' ) . '.php?page=simple_history_page' );
 	}
 }

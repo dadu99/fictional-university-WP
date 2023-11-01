@@ -655,7 +655,7 @@ class Helpers {
 
 		return sprintf(
 			'
-			<span class="sh-SettingsPage-settingsSectionTitle">
+			<span class="sh-SettingsPage-settingsSection-title">
 				%2$s
 				%1$s
 			</span>
@@ -694,4 +694,79 @@ class Helpers {
 			$icon_output
 		);
 	}
+
+	/**
+	 * Wrapper for \add_settings_section with added support for:
+	 * - Icon before title.
+	 * - Wrapper div automatically added.
+	 *
+	 * @param string $id Slug-name to identify the section. Used in the 'id' attribute of tags.
+	 * @param string|array $title Formatted title of the section. Shown as the heading for the section.
+	 *                     Pass in array instead of string to use as ['Section title', 'icon-slug']
+	 * @param callable $callback Function that echos out any content at the top of the section (between heading and fields).
+	 * @param string $page The slug-name of the settings page on which to show the section. Built-in pages include 'general', 'reading', 'writing', 'discussion', 'media', etc. Create your own using add_options_page()
+	 * @param array $args Optional. Additional arguments that are passed to the $callback function. Default empty array.
+	 */
+	public static function add_settings_section( $id, $title, $callback, $page, $args = [] ) {
+		// If title is array then it is [title, icon-slug].
+		if ( is_array( $title ) ) {
+			$title = self::get_settings_section_title_output( $title[0], $title[1] );
+		} else {
+			$title = self::get_settings_section_title_output( $title );
+		}
+
+		$args = [
+			'before_section' => '<div class="sh-SettingsPage-settingsSection-wrap">',
+			'after_section' => '</div>',
+		];
+
+		add_settings_section( $id, $title, $callback, $page, $args );
+	}
+
+	/**
+	 * Get URL for a main tab in the settings page.
+	 *
+	 * @param string $tab_slug Slug for the tab.
+	 * @return string URL for the tab, unescaped.
+	 */
+	public static function get_settings_page_tab_url( $tab_slug ) {
+		$settings_base_url = menu_page_url( Simple_History::SETTINGS_MENU_SLUG, 0 );
+		$settings_tab_url = add_query_arg( 'selected-tab', $tab_slug, $settings_base_url );
+		return $settings_tab_url;
+	}
+
+	/**
+	 * Get URL for a sub-tab in the settings page.
+	 *
+	 * @param string $sub_tab_slug Slug for the sub-tab.
+	 * @return string URL for the sub-tab, unescaped.
+	 */
+	public static function get_settings_page_sub_tab_url( $sub_tab_slug ) {
+		$settings_base_url = menu_page_url( Simple_History::SETTINGS_MENU_SLUG, 0 );
+		$settings_sub_tab_url = add_query_arg( 'selected-sub-tab', $sub_tab_slug, $settings_base_url );
+		return $settings_sub_tab_url;
+	}
+
+	/**
+	 *  Add link to add-ons.
+	 *
+	 * @return string HTML for link to add-ons.
+	 */
+	public static function get_header_add_ons_link() {
+		// TODO: Enable this later when add-ons flow are tested.
+		return '';
+
+		ob_start();
+
+		?>
+		<a href="https://simple-history.com/add-ons/?utm_source=wpadmin" class="sh-PageHeader-rightLink" target="_blank">
+			<span class="sh-PageHeader-settingsLinkIcon sh-Icon sh-Icon--extension"></span>
+			<span class="sh-PageHeader-settingsLinkText"><?php esc_html_e( 'Add-ons', 'simple-history' ); ?></span>
+			<em class="sh-PageHeader-settingsLinkIcon-new"><?php esc_html_e( 'New', 'simple-history' ); ?></em>
+		</a>
+		<?php
+
+		return ob_get_clean();
+	}
+
 }

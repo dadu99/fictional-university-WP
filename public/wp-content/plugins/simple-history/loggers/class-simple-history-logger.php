@@ -2,7 +2,6 @@
 
 namespace Simple_History\Loggers;
 
-use Simple_History\Event_Details\Event_Details_Container;
 use Simple_History\Event_Details\Event_Details_Group;
 use Simple_History\Event_Details\Event_Details_Item;
 
@@ -168,6 +167,6 @@ class Simple_History_Logger extends Logger {
 			)
 			->set_title( __( 'Changed items', 'simple-history' ) );
 
-		return new Event_Details_Container( $event_details_group, $row->context );
+		return $event_details_group;
 	}
 }
