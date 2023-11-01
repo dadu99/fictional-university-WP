@@ -1004,7 +1004,7 @@
             ]
         }
     },
-    "common.track_usage": false,
+    "common.track_usage": true,
     "common.tweeted": false,
     "config.check": true,
     "config.path": "",
