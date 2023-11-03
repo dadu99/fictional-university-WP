@@ -14,6 +14,9 @@ add_action('wp_enqueue_scripts', 'university_files');
 function university_features()
 {
     add_theme_support('title-tag');
+    register_nav_menu('headerMenuLocation', 'Header Menu Location');        //display Menus tab into dashboard admin
+    register_nav_menu('footerMenuLocation1', 'Footer Menu Location1');
+    register_nav_menu('footerMenuLocation2', 'Footer Menu Location2');
 }
 
 add_action('after_setup_theme', 'university_features');
