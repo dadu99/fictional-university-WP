@@ -17,7 +17,7 @@ get_header();
   while (have_posts()) {
     the_post(); ?>
     <div class="post-item">
-      <h2 class="headline headline--medium headline--post--title">
+      <h2 class="headline headline--medium headline--post--title text-decoration-none">
         <a href="<?php the_permalink(); ?>">
           <?php the_title(); ?>
         </a>
