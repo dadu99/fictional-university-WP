@@ -2,10 +2,13 @@
 
 namespace Simple_History\Services;
 
-use Simple_History\Simple_History;
 use Simple_History\Helpers;
 
+/**
+ * Setup a wp-cron job that daily checks if the database should be cleared.
+ */
 class Setup_Purge_DB_Cron extends Service {
+	/** @inheritdoc */
 	public function loaded() {
 		add_action( 'after_setup_theme', array( $this, 'setup_cron' ) );
 	}
@@ -75,7 +78,7 @@ class Setup_Purge_DB_Cron extends Service {
 			return;
 		}
 
-		$days = $this->simple_history->get_clear_history_interval();
+		$days = Helpers::get_clear_history_interval();
 
 		// Never clear log if days = 0.
 		if ( 0 == $days ) {

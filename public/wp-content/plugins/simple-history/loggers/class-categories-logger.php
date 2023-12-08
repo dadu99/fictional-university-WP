@@ -8,6 +8,7 @@ use Simple_History\Helpers;
  * Logs changes to categories and tags and taxonomies
  */
 class Categories_Logger extends Logger {
+	/** @var string Logger slug */
 	public $slug = 'SimpleCategoriesLogger';
 
 	/**
@@ -39,8 +40,8 @@ class Categories_Logger extends Logger {
 							'edited_term',
 						),
 					),
-				), // end search array
-			), // end labels
+				),
+			),
 		);
 
 		return $arr_info;
@@ -114,7 +115,7 @@ class Categories_Logger extends Logger {
 		return $parent;
 	}
 
-	/*
+	/**
 	 * Fires after a new term is created, and after the term cache has been cleaned.
 	 *
 	 * @since 2.3.0
